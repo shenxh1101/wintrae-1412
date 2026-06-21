@@ -90,12 +90,27 @@ export interface ExchangeOrder {
   meetMarkerId?: string;
   meetMarkerType?: MarkerType;
   meetTime?: string;
+  arrivalPublisher?: {
+    confirmed: boolean;
+    confirmedAt?: string;
+  };
+  arrivalRequester?: {
+    confirmed: boolean;
+    confirmedAt?: string;
+  };
   cancelReason?: string;
   rating?: number;
   ratingComment?: string;
   createdAt: string;
   updatedAt: string;
 }
+
+// 到场状态中文映射
+export const arrivalStatusLabels: Record<string, string> = {
+  none: '未到场',
+  one: '一方已到场',
+  both: '双方已到场'
+};
 
 // 地图标记
 export interface MapMarker {
@@ -128,11 +143,48 @@ export interface BlacklistUser {
 }
 
 // 信用提醒
+export type CreditEventType = 
+  | 'exchange_completed' 
+  | 'exchange_cancelled' 
+  | 'no_show' 
+  | 'good_rating' 
+  | 'bad_rating'
+  | 'on_time'
+  | 'system';
+
 export interface CreditReminder {
   id: string;
   type: 'warning' | 'info' | 'success';
+  eventType: CreditEventType;
   title: string;
   content: string;
+  exchangeId?: string;
+  itemTitle?: string;
+  creditChange?: number;
+  createdAt: string;
+  read: boolean;
+}
+
+// 物品操作日志
+export type ItemLogAction = 
+  | 'created' 
+  | 'edited' 
+  | 'offline' 
+  | 'online' 
+  | 'reserved' 
+  | 'exchanged'
+  | 'deleted';
+
+export interface ItemLog {
+  id: string;
+  itemId: string;
+  itemTitle: string;
+  action: ItemLogAction;
+  oldStatus?: string;
+  newStatus?: string;
+  changes?: string;
+  operatorId: string;
+  operatorName: string;
   createdAt: string;
 }
 
@@ -141,10 +193,37 @@ export interface QueueNumber {
   id: string;
   number: number;
   type: 'dropoff' | 'pickup';
+  markerId?: string;
+  markerName?: string;
+  markerType?: MarkerType;
   status: 'waiting' | 'calling' | 'completed' | 'cancelled';
   estimatedTime?: string;
+  currentCalling?: number;
+  waitCount?: number;
   createdAt: string;
 }
+
+// 信用事件类型中文映射
+export const creditEventTypeLabels: Record<CreditEventType, string> = {
+  exchange_completed: '完成交换',
+  exchange_cancelled: '取消交换',
+  no_show: '爽约',
+  good_rating: '好评',
+  bad_rating: '差评',
+  on_time: '按时到场',
+  system: '系统通知'
+};
+
+// 物品操作日志中文映射
+export const itemLogActionLabels: Record<ItemLogAction, string> = {
+  created: '发布物品',
+  edited: '编辑物品',
+  offline: '下架物品',
+  online: '重新上架',
+  reserved: '预留物品',
+  exchanged: '完成交换',
+  deleted: '删除物品'
+};
 
 // 品类中文映射
 export const categoryLabels: Record<ItemCategory, string> = {

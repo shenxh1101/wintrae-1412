@@ -1,20 +1,35 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
+import classnames from 'classnames';
 import {
-  mockCreditReminders,
   mockBlacklist,
-  mockNotices,
-  mockQueueNumbers
+  mockNotices
 } from '@/data/user';
 import { useAppStore, currentUserId, currentUser } from '@/store';
+import { markerTypeLabels } from '@/types';
 import styles from './index.module.scss';
 
 const ProfilePage: React.FC = () => {
   const items = useAppStore((s) => s.items);
+  const creditReminders = useAppStore((s) => s.creditReminders);
+  const queueNumbers = useAppStore((s) => s.queueNumbers);
+  
   const myPublishedCount = items.filter(
     (item) => item.publisherId === currentUserId
   ).length;
+
+  const myActiveQueues = useMemo(() => {
+    return queueNumbers.filter((q) => q.status === 'waiting' || q.status === 'calling');
+  }, [queueNumbers]);
+
+  const unreadCreditCount = useMemo(() => {
+    return creditReminders.filter((r) => !r.read).length;
+  }, [creditReminders]);
+
+  const getQueuePrefix = (type: string) => {
+    return type === 'dropoff' ? 'S' : 'P';
+  };
 
   const quickActions = [
     {
@@ -27,11 +42,11 @@ const ProfilePage: React.FC = () => {
       icon: '🔔',
       label: '信用提醒',
       type: 'orange',
-      badge: mockCreditReminders.length,
+      badge: unreadCreditCount,
       action: () =>
         Taro.showModal({
           title: '信用提醒',
-          content: mockCreditReminders.map((r) => `· ${r.title}`).join('\n'),
+          content: creditReminders.map((r) => `· ${r.title}`).join('\n'),
           showCancel: false,
           confirmColor: '#52C41A'
         })
@@ -110,7 +125,8 @@ const ProfilePage: React.FC = () => {
     {
       icon: '🎫',
       title: '活动排队取号',
-      subtitle: mockQueueNumbers.length > 0 ? `当前有 ${mockQueueNumbers.length} 个号` : '活动当天可取号',
+      subtitle: myActiveQueues.length > 0 ? `当前有 ${myActiveQueues.length} 个号` : '活动当天可取号',
+      badge: myActiveQueues.length,
       action: () => Taro.navigateTo({ url: '/pages/queue/index' })
     },
     {
@@ -118,14 +134,14 @@ const ProfilePage: React.FC = () => {
       iconClass: 'warning',
       title: '信用提醒',
       subtitle:
-        mockCreditReminders.length > 0
-          ? mockCreditReminders[0].title
+        creditReminders.length > 0
+          ? creditReminders[0].title
           : '暂无新的信用提醒',
-      badge: mockCreditReminders.length,
+      badge: unreadCreditCount,
       action: () =>
         Taro.showModal({
           title: '信用提醒',
-          content: mockCreditReminders.map((r) => `· ${r.title}\n  ${r.content}`).join('\n\n'),
+          content: creditReminders.map((r) => `· ${r.title}\n  ${r.content}`).join('\n\n'),
           showCancel: false,
           confirmColor: '#52C41A'
         })
@@ -184,6 +200,53 @@ const ProfilePage: React.FC = () => {
             </View>
           </View>
         </View>
+
+        {myActiveQueues.length > 0 && (
+          <View className={styles.queueSection}>
+            <Text className={styles.queueSectionTitle}>🎫 我的排队号</Text>
+            <View className={styles.queueCards}>
+              {myActiveQueues.map((queue) => {
+                const waitCount = queue.waitCount || 0;
+                const isCalling = waitCount === 0;
+                return (
+                  <View
+                    key={queue.id}
+                    className={classnames(
+                      styles.profileQueueCard,
+                      isCalling && styles.profileQueueCalling
+                    )}
+                    onClick={() => Taro.navigateTo({ url: '/pages/queue/index' })}
+                  >
+                    <View className={styles.queueCardHeader}>
+                      <Text className={styles.queueCardType}>
+                        {queue.type === 'dropoff' ? '📦 送件登记' : '🎁 取件领取'}
+                      </Text>
+                      <Text className={classnames(
+                        styles.queueCardStatus,
+                        isCalling && styles.statusCalling
+                      )}>
+                        {isCalling ? '正在叫号' : `前方${waitCount}位`}
+                      </Text>
+                    </View>
+                    <View className={styles.queueCardNumber}>
+                      {getQueuePrefix(queue.type)}{queue.number.toString().padStart(3, '0')}
+                    </View>
+                    {queue.markerName && (
+                      <View className={styles.queueCardMarker}>
+                        <Text className={styles.queueMarkerType}>
+                          {queue.markerType && markerTypeLabels[queue.markerType]}
+                        </Text>
+                        <Text className={styles.queueMarkerName}>
+                          {queue.markerName}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </View>
 
       <View className={styles.content}>

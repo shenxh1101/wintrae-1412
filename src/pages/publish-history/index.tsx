@@ -67,6 +67,10 @@ const PublishHistoryPage: React.FC = () => {
     Taro.navigateTo({ url: `/pages/item-edit/index?id=${itemId}` });
   };
 
+  const handleViewLog = (itemId: string, title: string) => {
+    Taro.navigateTo({ url: `/pages/item-log/index?itemId=${itemId}&title=${encodeURIComponent(title)}` });
+  };
+
   const handleToggleOffline = (itemId: string, currentStatus: ItemStatus) => {
     const isOffline = currentStatus === 'offline';
     Taro.showModal({
@@ -163,7 +167,18 @@ const PublishHistoryPage: React.FC = () => {
                 <Text className={classnames(styles.statusTag, getStatusClass(item.status))}>
                   {itemStatusLabels[item.status]}
                 </Text>
-                <Text className={styles.cardTime}>{formatTime(item.createdAt)}</Text>
+                <View className={styles.headerActions}>
+                  <View
+                    className={styles.logBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewLog(item.id, item.title);
+                    }}
+                  >
+                    📋 记录
+                  </View>
+                  <Text className={styles.cardTime}>{formatTime(item.createdAt)}</Text>
+                </View>
               </View>
 
               <View className={styles.cardBody}>

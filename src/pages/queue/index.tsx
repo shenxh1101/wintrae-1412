@@ -1,18 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import {
-  mockQueueNumbers,
-  mockCurrentCalling
-} from '@/data/user';
-import { QueueNumber } from '@/types';
+import classnames from 'classnames';
+import Tag from '@/components/Tag';
+import { mockMapMarkers } from '@/data/map-markers';
+import { useAppStore, currentUser } from '@/store';
+import { QueueNumber, MarkerType, markerTypeLabels } from '@/types';
 import { formatDate } from '@/utils';
 import styles from './index.module.scss';
-import classnames from 'classnames';
+
+const markerIcons: Record<MarkerType, string> = {
+  stall: '🏪',
+  service: '🛎️',
+  donation: '❤️'
+};
 
 const QueuePage: React.FC = () => {
-  const [myQueues, setMyQueues] = useState<QueueNumber[]>(mockQueueNumbers);
-  const [currentCalling, setCurrentCalling] = useState(mockCurrentCalling);
+  const queueNumbers = useAppStore((s) => s.queueNumbers);
+  const addQueueNumber = useAppStore((s) => s.addQueueNumber);
+  const cancelQueueNumber = useAppStore((s) => s.cancelQueueNumber);
+
+  const myQueues = useMemo(() => {
+    return queueNumbers.filter((q) => q.status !== 'completed' && q.status !== 'cancelled');
+  }, [queueNumbers]);
+
+  const currentCalling = useMemo(() => {
+    const waiting = queueNumbers.filter((q) => q.status === 'waiting' || q.status === 'calling');
+    if (waiting.length === 0) return { dropoff: 0, pickup: 0 };
+    const minDropoff = Math.min(...waiting.filter((q) => q.type === 'dropoff').map((q) => q.number), 0);
+    const minPickup = Math.min(...waiting.filter((q) => q.type === 'pickup').map((q) => q.number), 0);
+    return { dropoff: minDropoff, pickup: minPickup };
+  }, [queueNumbers]);
 
   const getQueueTypeLabel = (type: QueueNumber['type']) => {
     return type === 'dropoff' ? '送件登记' : '取件领取';
@@ -52,36 +70,74 @@ const QueuePage: React.FC = () => {
   };
 
   const getWaitCount = (queue: QueueNumber) => {
-    const current = queue.type === 'dropoff' ? currentCalling.dropoff : currentCalling.pickup;
-    const wait = queue.number - current;
-    return wait > 0 ? wait : 0;
+    if (queue.waitCount !== undefined) return queue.waitCount;
+    const sameMarker = queueNumbers.filter(
+      (q) => q.markerId === queue.markerId && q.status === 'waiting' && q.number < queue.number
+    );
+    return sameMarker.length;
+  };
+
+  const isCurrentCalling = (queue: QueueNumber) => {
+    if (queue.currentCalling !== undefined) return queue.currentCalling === queue.number;
+    const sameMarkerWaiting = queueNumbers
+      .filter((q) => q.markerId === queue.markerId && q.status === 'waiting')
+      .sort((a, b) => a.number - b.number);
+    return sameMarkerWaiting.length > 0 && sameMarkerWaiting[0].id === queue.id;
   };
 
   const handleTakeNumber = (type: QueueNumber['type']) => {
     const typeLabel = getQueueTypeLabel(type);
-    Taro.showModal({
-      title: `取号确认`,
-      content: `确定要领取【${typeLabel}】的排队号吗？`,
-      confirmColor: '#52C41A',
+    
+    const filteredMarkers = type === 'dropoff' 
+      ? mockMapMarkers.filter((m) => m.type === 'donation' || m.type === 'service')
+      : mockMapMarkers;
+    
+    const markerItems = filteredMarkers.map((m) => ({
+      label: `${markerIcons[m.type]} ${markerTypeLabels[m.type]} · ${m.name}`,
+      value: m
+    }));
+
+    Taro.showActionSheet({
+      itemList: markerItems.map((m) => m.label),
       success: (res) => {
-        if (res.confirm) {
-          const newNumber = type === 'dropoff' ? currentCalling.dropoff + 20 : currentCalling.pickup + 20;
-          const newQueue: QueueNumber = {
-            id: `queue-${Date.now()}`,
-            number: newNumber,
-            type,
-            status: 'waiting',
-            estimatedTime: type === 'dropoff' ? '约20分钟后' : '约15分钟后',
-            createdAt: new Date().toLocaleString()
-          };
-          setMyQueues([newQueue, ...myQueues]);
-          console.log('[Queue] 领取新号:', newQueue);
-          Taro.showToast({
-            title: `取号成功！${getQueuePrefix(type)}${newNumber}`,
-            icon: 'success',
-            duration: 2000
-          });
-        }
+        const selectedMarker = markerItems[res.tapIndex].value;
+        
+        Taro.showModal({
+          title: `取号确认`,
+          content: `确定要在【${selectedMarker.name}】领取【${typeLabel}】的排队号吗？`,
+          confirmColor: '#52C41A',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              const sameMarkerQueues = queueNumbers.filter(
+                (q) => q.markerId === selectedMarker.id && q.type === type
+              );
+              const maxNumber = sameMarkerQueues.length > 0 
+                ? Math.max(...sameMarkerQueues.map((q) => q.number))
+                : 0;
+              const newNumber = maxNumber + 1;
+              const waitCount = sameMarkerQueues.filter((q) => q.status === 'waiting').length;
+              
+              addQueueNumber({
+                number: newNumber,
+                type,
+                markerId: selectedMarker.id,
+                markerName: selectedMarker.name,
+                markerType: selectedMarker.type,
+                status: 'waiting',
+                waitCount,
+                currentCalling: Math.max(1, newNumber - waitCount),
+                estimatedTime: waitCount > 0 ? `约${waitCount * 5}分钟后` : '即将叫号'
+              });
+              
+              console.log('[Queue] 领取新号 at marker:', selectedMarker.id, newNumber);
+              Taro.showToast({
+                title: `取号成功！${getQueuePrefix(type)}${newNumber.toString().padStart(3, '0')}`,
+                icon: 'success',
+                duration: 2000
+              });
+            }
+          }
+        });
       }
     });
   };
@@ -93,11 +149,7 @@ const QueuePage: React.FC = () => {
       confirmColor: '#F53F3F',
       success: (res) => {
         if (res.confirm) {
-          setMyQueues(
-            myQueues.map((q) =>
-              q.id === queueId ? { ...q, status: 'cancelled' as const } : q
-            )
-          );
+          cancelQueueNumber(queueId);
           console.log('[Queue] 取消排队:', queueId);
           Taro.showToast({ title: '已取消', icon: 'success' });
         }
@@ -215,15 +267,35 @@ const QueuePage: React.FC = () => {
                   {getQueueTypeLabel(queue.type)}
                 </Text>
                 <Text className={classnames(styles.queueStatusBadge, getStatusClass(queue.status))}>
-                  {getStatusLabel(queue.status)}
+                  {isCurrentCalling(queue) ? '正在叫号' : getStatusLabel(queue.status)}
                 </Text>
               </View>
+
+              {queue.markerName && (
+                <View className={styles.queueMarker}>
+                  {queue.markerType && (
+                    <Tag
+                      text={markerTypeLabels[queue.markerType]}
+                      type={queue.markerType === 'donation' ? 'warning' : 'primary'}
+                      size="sm"
+                    />
+                  )}
+                  <Text className={styles.markerName}>
+                    {markerIcons[queue.markerType as MarkerType]} {queue.markerName}
+                  </Text>
+                </View>
+              )}
 
               <View className={styles.queueNumberDisplay}>
                 <Text className={styles.queueNumberPrefix}>您的排队号</Text>
                 <Text className={styles.queueNumberBig}>
                   {getQueuePrefix(queue.type)}{queue.number.toString().padStart(3, '0')}
                 </Text>
+                {isCurrentCalling(queue) && (
+                  <View className={styles.callingAnimation}>
+                    <Text className={styles.callingPulse}>🔔 正在叫您的号</Text>
+                  </View>
+                )}
               </View>
 
               <View className={styles.queueInfo}>
@@ -237,7 +309,7 @@ const QueuePage: React.FC = () => {
                   <Text className={styles.infoValue}>
                     {queue.status === 'waiting' && queue.estimatedTime
                       ? queue.estimatedTime
-                      : queue.status === 'calling'
+                      : isCurrentCalling(queue)
                       ? '请尽快前往'
                       : '-'}
                   </Text>

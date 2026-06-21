@@ -120,6 +120,28 @@
   color: $color-text-tertiary;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.logBtn {
+  padding: 6rpx 16rpx;
+  background: linear-gradient(135deg, rgba($color-info, 0.1) 0%, rgba($color-primary, 0.05) 100%);
+  border-radius: $radius-sm;
+  font-size: 22rpx;
+  color: $color-info;
+  font-weight: $font-weight-medium;
+  border: 1rpx solid rgba($color-info, 0.2);
+  transition: all $transition-fast;
+  
+  &:active {
+    transform: scale(0.95);
+    background: rgba($color-info, 0.15);
+  }
+}
+
 .cardTime {
   font-size: 24rpx;
   color: $color-text-tertiary;

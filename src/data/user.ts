@@ -14,18 +14,27 @@ export const mockCreditReminders: CreditReminder[] = [
   {
     id: 'credit-001',
     type: 'success',
+    eventType: 'exchange_completed',
     title: '信用分提升',
     content: '您完成了一次成功的交换，信用分+2分，当前98分',
-    createdAt: '2026-06-18 16:00:00'
+    exchangeId: 'ex-001',
+    itemTitle: '儿童绘本 10本',
+    creditChange: 2,
+    createdAt: '2026-06-18 16:00:00',
+    read: false
   },
   {
     id: 'credit-002',
     type: 'info',
+    eventType: 'system',
     title: '活动提醒',
     content: '本周六社区将举办大型旧物交换活动，欢迎参与！',
-    createdAt: '2026-06-20 10:00:00'
+    createdAt: '2026-06-20 10:00:00',
+    read: true
   }
 ];
+
+export const mockItemLogs: ItemLog[] = [];
 
 export const mockBlacklist: BlacklistUser[] = [
   {
@@ -73,15 +82,25 @@ export const mockQueueNumbers: QueueNumber[] = [
     id: 'queue-001',
     number: 23,
     type: 'dropoff',
+    markerId: 'marker-001',
+    markerName: '社区服务总台',
+    markerType: 'service',
     status: 'waiting',
     estimatedTime: '约15分钟后',
+    currentCalling: 15,
+    waitCount: 8,
     createdAt: '2026-06-22 09:30:00'
   },
   {
     id: 'queue-002',
     number: 45,
     type: 'pickup',
+    markerId: 'marker-007',
+    markerName: '爱心捐赠点',
+    markerType: 'donation',
     status: 'calling',
+    currentCalling: 45,
+    waitCount: 0,
     createdAt: '2026-06-22 09:35:00'
   }
 ];

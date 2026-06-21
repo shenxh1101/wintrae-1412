@@ -364,3 +364,207 @@
 .markerInfoIcon {
   margin-right: 8rpx;
 }
+
+.boardOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.boardPanel {
+  width: 100%;
+  height: 700rpx;
+  background: $color-bg-card;
+  border-radius: $radius-lg $radius-lg 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.boardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $page-padding $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.boardTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.boardSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+}
+
+.boardClose {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: $color-text-tertiary;
+  background: $color-bg-page;
+  border-radius: 50%;
+  transition: all $transition-fast;
+  
+  &:active {
+    transform: scale(0.9);
+    background: $color-divider;
+  }
+}
+
+.boardStats {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md $page-padding;
+  background: linear-gradient(135deg, rgba($color-primary, 0.03) 0%, rgba($color-secondary, 0.02) 100%);
+}
+
+.boardStat {
+  flex: 1;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-sm;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid $color-divider;
+}
+
+.boardStatNum {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: $color-primary-dark;
+  line-height: 1.2;
+  margin-bottom: 4rpx;
+}
+
+.boardStatLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.boardTabs {
+  white-space: nowrap;
+  padding: $spacing-sm $page-padding;
+  border-bottom: 1rpx solid $color-divider;
+  background: $color-bg-card;
+}
+
+.boardTab {
+  display: inline-block;
+  padding: 12rpx 24rpx;
+  margin-right: $spacing-sm;
+  background: $color-bg-page;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-fast;
+  border: 2rpx solid transparent;
+  
+  &.boardTabActive {
+    background: linear-gradient(135deg, rgba($color-primary, 0.15) 0%, rgba($color-primary-light, 0.1) 100%);
+    color: $color-primary-dark;
+    font-weight: $font-weight-semibold;
+    border-color: $color-primary;
+  }
+  
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.boardList {
+  flex: 1;
+  padding: $spacing-md $page-padding;
+  overflow-y: auto;
+}
+
+.boardItem {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+  border: 1rpx solid $color-divider;
+  transition: all $transition-fast;
+  
+  &:active {
+    background: $color-bg-page;
+    transform: scale(0.99);
+  }
+}
+
+.boardItemImg {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+  background: $color-bg-page;
+}
+
+.boardItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.boardItemTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.boardItemName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  flex: 1;
+  margin-right: $spacing-sm;
+}
+
+.boardItemUsers {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.boardItemMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.boardItemTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}

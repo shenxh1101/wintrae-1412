@@ -28,6 +28,7 @@ const ExchangeDetailPage: React.FC = () => {
   const updateExchange = useAppStore((s) => s.updateExchange);
   const addMessage = useAppStore((s) => s.addMessage);
   const updateItem = useAppStore((s) => s.updateItem);
+  const confirmArrival = useAppStore((s) => s.confirmArrival);
 
   const exchange: ExchangeOrder | undefined =
     exchanges.find((e) => e.id === id);
@@ -207,6 +208,32 @@ const ExchangeDetailPage: React.FC = () => {
     });
   };
 
+  const handleConfirmArrival = () => {
+    const role = isPublisher ? 'publisher' : 'requester';
+    const alreadyConfirmed = isPublisher
+      ? exchange.arrivalPublisher?.confirmed
+      : exchange.arrivalRequester?.confirmed;
+    
+    if (alreadyConfirmed) {
+      Taro.showToast({ title: '您已确认到场', icon: 'none' });
+      return;
+    }
+    
+    Taro.showModal({
+      title: '确认到场',
+      content: `请确认您已到达「${exchange.meetLocation}」，确认后将通知对方。`,
+      confirmText: '确认到场',
+      confirmColor: '#52C41A',
+      success: (res) => {
+        if (res.confirm) {
+          confirmArrival(exchange.id, role);
+          console.log('[ExchangeDetail] Arrival confirmed:', role);
+          Taro.showToast({ title: '已确认到场', icon: 'success' });
+        }
+      }
+    });
+  };
+
   const handleCancel = () => {
     const reasons = [
       '物品已被交换',
@@ -309,6 +336,11 @@ const ExchangeDetailPage: React.FC = () => {
         </View>
       );
     } else if (exchange.status === 'confirmed') {
+      const myArrivalConfirmed = isPublisher
+        ? exchange.arrivalPublisher?.confirmed
+        : exchange.arrivalRequester?.confirmed;
+      const bothArrived = exchange.arrivalPublisher?.confirmed && exchange.arrivalRequester?.confirmed;
+      
       btns.push(
         <View
           key="cancel"
@@ -318,15 +350,39 @@ const ExchangeDetailPage: React.FC = () => {
           取消交换
         </View>
       );
-      btns.push(
-        <View
-          key="complete"
-          className={classnames(styles.footerBtn, styles.btnPrimary)}
-          onClick={handleComplete}
-        >
-          确认完成交换
-        </View>
-      );
+      
+      if (!myArrivalConfirmed) {
+        btns.push(
+          <View
+            key="arrival"
+            className={classnames(styles.footerBtn, styles.btnSecondary)}
+            onClick={handleConfirmArrival}
+          >
+            📍 确认到场
+          </View>
+        );
+      }
+      
+      if (bothArrived) {
+        btns.push(
+          <View
+            key="complete"
+            className={classnames(styles.footerBtn, styles.btnPrimary)}
+            onClick={handleComplete}
+          >
+            确认完成交换
+          </View>
+        );
+      } else if (myArrivalConfirmed) {
+        btns.push(
+          <View
+            key="waiting"
+            className={classnames(styles.footerBtn, styles.btnDisabled)}
+          >
+            ⏳ 等待对方到场
+          </View>
+        );
+      }
     } else if (exchange.status === 'completed') {
       if (!exchange.rating) {
         btns.push(
@@ -437,6 +493,49 @@ const ExchangeDetailPage: React.FC = () => {
               <View className={styles.meetContent}>
                 <Text className={styles.meetLabel}>约定时间</Text>
                 <Text className={styles.meetValue}>{exchange.meetTime}</Text>
+              </View>
+            </View>
+          )}
+          
+          {exchange.status === 'confirmed' && (
+            <View className={styles.arrivalStatusRow}>
+              <Text className={styles.meetIcon}>👥</Text>
+              <View className={styles.meetContent}>
+                <Text className={styles.meetLabel}>到场确认</Text>
+                <View className={styles.arrivalStatus}>
+                  <View className={classnames(
+                    styles.arrivalItem,
+                    exchange.arrivalPublisher?.confirmed && styles.arrivalConfirmed
+                  )}>
+                    <Text className={styles.arrivalIcon}>
+                      {exchange.arrivalPublisher?.confirmed ? '✅' : '⭕'}
+                    </Text>
+                    <Text className={styles.arrivalName}>
+                      {exchange.publisherName}（发布者）
+                    </Text>
+                    {exchange.arrivalPublisher?.confirmed && (
+                      <Text className={styles.arrivalTime}>
+                        {formatTime(exchange.arrivalPublisher.confirmedAt)}
+                      </Text>
+                    )}
+                  </View>
+                  <View className={classnames(
+                    styles.arrivalItem,
+                    exchange.arrivalRequester?.confirmed && styles.arrivalConfirmed
+                  )}>
+                    <Text className={styles.arrivalIcon}>
+                      {exchange.arrivalRequester?.confirmed ? '✅' : '⭕'}
+                    </Text>
+                    <Text className={styles.arrivalName}>
+                      {exchange.requesterName}（申请者）
+                    </Text>
+                    {exchange.arrivalRequester?.confirmed && (
+                      <Text className={styles.arrivalTime}>
+                        {formatTime(exchange.arrivalRequester.confirmedAt)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
               </View>
             </View>
           )}
