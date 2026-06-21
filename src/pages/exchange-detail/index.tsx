@@ -4,12 +4,21 @@ import Taro, { useRouter } from '@tarojs/taro';
 import classnames from 'classnames';
 import Tag from '@/components/Tag';
 import { useAppStore, currentUser } from '@/store';
+import { mockMapMarkers } from '@/data/map-markers';
 import {
   ExchangeOrder,
-  exchangeStatusLabels
+  exchangeStatusLabels,
+  markerTypeLabels,
+  MarkerType
 } from '@/types';
-import { formatDate, formatTime } from '@/utils';
+import { formatDate, formatTime, generateId } from '@/utils';
 import styles from './index.module.scss';
+
+const markerIcons: Record<MarkerType, string> = {
+  stall: '🏪',
+  service: '🛎️',
+  donation: '❤️'
+};
 
 const ExchangeDetailPage: React.FC = () => {
   const router = useRouter();
@@ -17,6 +26,7 @@ const ExchangeDetailPage: React.FC = () => {
 
   const exchanges = useAppStore((s) => s.exchanges);
   const updateExchange = useAppStore((s) => s.updateExchange);
+  const addMessage = useAppStore((s) => s.addMessage);
   const updateItem = useAppStore((s) => s.updateItem);
 
   const exchange: ExchangeOrder | undefined =
@@ -40,9 +50,9 @@ const ExchangeDetailPage: React.FC = () => {
 
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
-    
+
     const newMsg = {
-      id: `msg-${Date.now()}`,
+      id: generateId(),
       exchangeId: exchange.id,
       senderId: currentUser.id,
       senderName: currentUser.name,
@@ -50,12 +60,10 @@ const ExchangeDetailPage: React.FC = () => {
       content: messageText.trim(),
       createdAt: new Date().toLocaleString()
     };
-    
-    updateExchange(exchange.id, {
-      messages: [...exchange.messages, newMsg]
-    });
+
+    addMessage(exchange.id, newMsg);
     setMessageText('');
-    console.log('[ExchangeDetail] Message sent:', newMsg);
+    console.log('[ExchangeDetail] Message sent (persisted):', newMsg.id);
   };
 
   const handleReserve = () => {
@@ -69,6 +77,15 @@ const ExchangeDetailPage: React.FC = () => {
         if (res.confirm) {
           updateExchange(exchange.id, { status: 'reserved' });
           updateItem(exchange.itemId, { status: 'reserved' });
+          addMessage(exchange.id, {
+            id: generateId(),
+            exchangeId: exchange.id,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            senderAvatar: currentUser.avatar,
+            content: '【系统】发布者已为您预留该物品，请约定地点时间。',
+            createdAt: new Date().toLocaleString()
+          });
           console.log('[ExchangeDetail] Reserved:', exchange.id);
           Taro.showToast({ title: '已预留', icon: 'success' });
         }
@@ -77,49 +94,47 @@ const ExchangeDetailPage: React.FC = () => {
   };
 
   const handleConfirmMeet = () => {
-    const locations = ['社区活动中心', '小区东门', '社区广场', '活动中心服务台'];
-    Taro.showActionSheet({
-      itemList: [...locations, '自定义地点'],
-      success: (res) => {
-        if (res.tapIndex === locations.length) {
-          Taro.showModal({
-            title: '输入约定地点',
-            editable: true,
-            placeholderText: '请输入约定地点',
-            confirmColor: '#52C41A',
-            success: (modalRes) => {
-              if (modalRes.confirm && modalRes.content?.trim()) {
-                confirmMeetLocation(modalRes.content.trim());
-              }
-            }
-          });
-        } else {
-          confirmMeetLocation(locations[res.tapIndex]);
-        }
-      }
-    });
-  };
+    const markerItems = mockMapMarkers.map((m) => ({
+      label: `${markerIcons[m.type]} ${markerTypeLabels[m.type]} · ${m.name}`,
+      value: m
+    }));
 
-  const confirmMeetLocation = (location: string) => {
-    const now = new Date();
-    const defaultTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate() + 1).padStart(2, '0')} 14:00`;
-    Taro.showModal({
-      title: '约定时间',
-      editable: true,
-      placeholderText: `如：${defaultTime}`,
-      content: defaultTime,
-      confirmColor: '#52C41A',
+    Taro.showActionSheet({
+      itemList: markerItems.map((m) => m.label),
       success: (res) => {
-        if (res.confirm) {
-          const meetTime = res.content?.trim() || defaultTime;
-          updateExchange(exchange.id, {
-            status: 'confirmed',
-            meetLocation: location,
-            meetTime
-          });
-          console.log('[ExchangeDetail] Confirmed meet:', location, meetTime);
-          Taro.showToast({ title: '已约定地点时间', icon: 'success' });
-        }
+        const selected = markerItems[res.tapIndex].value;
+        const now = new Date();
+        const defaultTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate() + 1).padStart(2, '0')} 14:00`;
+        Taro.showModal({
+          title: '约定时间',
+          editable: true,
+          placeholderText: `如：${defaultTime}`,
+          content: defaultTime,
+          confirmColor: '#52C41A',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              const meetTime = modalRes.content?.trim() || defaultTime;
+              updateExchange(exchange.id, {
+                status: 'confirmed',
+                meetLocation: selected.name,
+                meetMarkerId: selected.id,
+                meetMarkerType: selected.type,
+                meetTime
+              });
+              addMessage(exchange.id, {
+                id: generateId(),
+                exchangeId: exchange.id,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                senderAvatar: currentUser.avatar,
+                content: `【系统】已约定：${markerTypeLabels[selected.type]} ${selected.name}，时间 ${meetTime}`,
+                createdAt: new Date().toLocaleString()
+              });
+              console.log('[ExchangeDetail] Confirmed meet at marker:', selected.id);
+              Taro.showToast({ title: '已约定地点时间', icon: 'success' });
+            }
+          }
+        });
       }
     });
   };
@@ -134,6 +149,15 @@ const ExchangeDetailPage: React.FC = () => {
         if (res.confirm) {
           updateExchange(exchange.id, { status: 'completed' });
           updateItem(exchange.itemId, { status: 'exchanged' });
+          addMessage(exchange.id, {
+            id: generateId(),
+            exchangeId: exchange.id,
+            senderId: currentUser.id,
+            senderName: currentUser.name,
+            senderAvatar: currentUser.avatar,
+            content: '【系统】双方已确认完成物品交换。',
+            createdAt: new Date().toLocaleString()
+          });
           console.log('[ExchangeDetail] Completed:', exchange.id);
           Taro.showToast({ title: '交换完成', icon: 'success' });
         }
@@ -160,11 +184,21 @@ const ExchangeDetailPage: React.FC = () => {
           confirmColor: '#52C41A',
           success: (modalRes) => {
             if (modalRes.confirm) {
+              const comment = modalRes.content?.trim() || '';
               updateExchange(exchange.id, {
                 rating,
-                ratingComment: modalRes.content?.trim() || ''
+                ratingComment: comment
               });
-              console.log('[ExchangeDetail] Rated:', rating, modalRes.content);
+              addMessage(exchange.id, {
+                id: generateId(),
+                exchangeId: exchange.id,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                senderAvatar: currentUser.avatar,
+                content: `【系统】${'⭐'.repeat(rating)} 完成评价${comment ? `：${comment}` : ''}`,
+                createdAt: new Date().toLocaleString()
+              });
+              console.log('[ExchangeDetail] Rated:', rating, comment);
               Taro.showToast({ title: '评价成功', icon: 'success' });
             }
           }
@@ -200,7 +234,18 @@ const ExchangeDetailPage: React.FC = () => {
                 status: 'cancelled',
                 cancelReason
               });
-              updateItem(exchange.itemId, { status: 'available' });
+              if (exchange.status !== 'pending') {
+                updateItem(exchange.itemId, { status: 'available' });
+              }
+              addMessage(exchange.id, {
+                id: generateId(),
+                exchangeId: exchange.id,
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                senderAvatar: currentUser.avatar,
+                content: `【系统】交换已取消，原因：${cancelReason}`,
+                createdAt: new Date().toLocaleString()
+              });
               console.log('[ExchangeDetail] Cancelled:', cancelReason);
               Taro.showToast({ title: '已取消', icon: 'none' });
             }
@@ -360,13 +405,32 @@ const ExchangeDetailPage: React.FC = () => {
       {(exchange.status === 'reserved' || exchange.status === 'confirmed' || exchange.status === 'completed') && exchange.meetLocation && (
         <View className={styles.meetCard}>
           <Text className={styles.sectionTitle}>交换约定</Text>
-          <View className={styles.meetInfoRow}>
-            <Text className={styles.meetIcon}>📍</Text>
-            <View className={styles.meetContent}>
-              <Text className={styles.meetLabel}>约定地点</Text>
-              <Text className={styles.meetValue}>{exchange.meetLocation}</Text>
+          {exchange.meetMarkerType && (
+            <View className={styles.meetInfoRow}>
+              <Text className={styles.meetIcon}>{markerIcons[exchange.meetMarkerType]}</Text>
+              <View className={styles.meetContent}>
+                <Text className={styles.meetLabel}>地点类型</Text>
+                <Text className={styles.meetValue}>
+                  <Tag
+                    text={markerTypeLabels[exchange.meetMarkerType]}
+                    type={exchange.meetMarkerType === 'donation' ? 'warning' : 'primary'}
+                    size="sm"
+                    style={{ marginRight: 12 }}
+                  />
+                  {exchange.meetLocation}
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
+          {!exchange.meetMarkerType && (
+            <View className={styles.meetInfoRow}>
+              <Text className={styles.meetIcon}>📍</Text>
+              <View className={styles.meetContent}>
+                <Text className={styles.meetLabel}>约定地点</Text>
+                <Text className={styles.meetValue}>{exchange.meetLocation}</Text>
+              </View>
+            </View>
+          )}
           {exchange.meetTime && (
             <View className={styles.meetInfoRow}>
               <Text className={styles.meetIcon}>⏰</Text>
@@ -396,7 +460,7 @@ const ExchangeDetailPage: React.FC = () => {
       )}
 
       <View className={styles.messagesCard}>
-        <Text className={styles.sectionTitle}>双方留言</Text>
+        <Text className={styles.sectionTitle}>双方留言 ({exchange.messages.length})</Text>
         <View className={styles.messagesList}>
           {exchange.messages.map((msg) => {
             const isMe = msg.senderId === currentUser.id;

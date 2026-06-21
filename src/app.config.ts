@@ -8,6 +8,7 @@ export default defineAppConfig({
     'pages/item-detail/index',
     'pages/exchange-detail/index',
     'pages/publish-history/index',
+    'pages/item-edit/index',
     'pages/queue/index'
   ],
   window: {

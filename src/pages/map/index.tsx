@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
+import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import Tag from '@/components/Tag';
 import { mockMapMarkers } from '@/data/map-markers';
+import { useAppStore } from '@/store';
 import { MapMarker, MarkerType, markerTypeLabels } from '@/types';
 import styles from './index.module.scss';
 
@@ -11,6 +13,7 @@ type FilterType = 'all' | MarkerType;
 const MapPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
+  const exchanges = useAppStore((s) => s.exchanges);
 
   const filters: { key: FilterType; label: string; icon: string }[] = [
     { key: 'all', label: '全部', icon: '🗺️' },
@@ -24,6 +27,30 @@ const MapPage: React.FC = () => {
     service: '🛎️',
     donation: '❤️'
   };
+
+  const activeExchangesByMarker = useMemo(() => {
+    const map: Record<string, { count: number; items: string[] }> = {};
+    exchanges.forEach((ex) => {
+      if (
+        (ex.status === 'reserved' || ex.status === 'confirmed' || ex.status === 'completed') &&
+        ex.meetMarkerId
+      ) {
+        if (!map[ex.meetMarkerId]) {
+          map[ex.meetMarkerId] = { count: 0, items: [] };
+        }
+        map[ex.meetMarkerId].count++;
+        if (ex.itemTitle && map[ex.meetMarkerId].items.length < 3) {
+          map[ex.meetMarkerId].items.push(ex.itemTitle);
+        }
+      }
+    });
+    return map;
+  }, [exchanges]);
+
+  const totalActiveAgreements = useMemo(
+    () => Object.values(activeExchangesByMarker).reduce((s, v) => s + v.count, 0),
+    [activeExchangesByMarker]
+  );
 
   const filteredMarkers = useMemo(() => {
     if (activeFilter === 'all') return mockMapMarkers;
@@ -48,8 +75,23 @@ const MapPage: React.FC = () => {
   ];
 
   const handleMarkerClick = (markerId: string) => {
-    setActiveMarker(markerId === activeMarker ? null : markerId);
-    console.log('[MapPage] Marker clicked:', markerId);
+    const newActive = markerId === activeMarker ? null : markerId;
+    setActiveMarker(newActive);
+    console.log('[MapPage] Marker clicked:', markerId, '约定数:', activeExchangesByMarker[markerId]?.count ?? 0);
+  };
+
+  const handleViewDetail = (marker: MapMarker) => {
+    const info = activeExchangesByMarker[marker.id];
+    const content = info
+      ? `当前有 ${info.count} 个活跃交换约定${info.items.length > 0 ? '\n涉及物品：' + info.items.join('、') : ''}`
+      : '暂无交换约定，可在约定地点时选择此处。';
+    Taro.showModal({
+      title: marker.name,
+      content,
+      showCancel: false,
+      confirmText: '知道了',
+      confirmColor: '#52C41A'
+    });
   };
 
   return (
@@ -69,6 +111,11 @@ const MapPage: React.FC = () => {
             ))}
           </View>
         </ScrollView>
+        {totalActiveAgreements > 0 && (
+          <View className={styles.activeHint}>
+            📌 已有 <Text style={{ color: '#52C41A', fontWeight: 600 }}>{totalActiveAgreements}</Text> 个交换约定在活动点位等待完成
+          </View>
+        )}
       </View>
 
       <View className={styles.mapContainer}>
@@ -79,22 +126,38 @@ const MapPage: React.FC = () => {
           <View className={styles.markersLayer}>
             {filteredMarkers.map((marker, index) => {
               const pos = markerPositions[index % markerPositions.length];
+              const agreementInfo = activeExchangesByMarker[marker.id];
+              const hasAgreement = !!agreementInfo;
               return (
                 <View
                   key={marker.id}
                   className={classnames(
                     styles.mapMarker,
-                    activeMarker === marker.id && styles.active
+                    activeMarker === marker.id && styles.active,
+                    hasAgreement && styles.hasAgreement
                   )}
                   style={{ top: pos.top, left: pos.left }}
                   onClick={() => handleMarkerClick(marker.id)}
                 >
                   {activeMarker === marker.id && (
-                    <View className={styles.markerBubble}>{marker.name}</View>
+                    <View className={styles.markerBubble}>
+                      {marker.name}
+                      {hasAgreement && ` · ${agreementInfo.count}约`}
+                    </View>
                   )}
-                  <Text className={styles.markerPin}>
-                    {markerIcons[marker.type]}
-                  </Text>
+                  <View className={styles.markerPinWrap}>
+                    {hasAgreement && (
+                      <View className={styles.agreementBadge}>{agreementInfo.count}</View>
+                    )}
+                    <Text
+                      className={classnames(
+                        styles.markerPin,
+                        hasAgreement && styles.pinHot
+                      )}
+                    >
+                      {markerIcons[marker.type]}
+                    </Text>
+                  </View>
                 </View>
               );
             })}
@@ -107,39 +170,57 @@ const MapPage: React.FC = () => {
           活动地点（{filteredMarkers.length}个）
         </Text>
 
-        {filteredMarkers.map((marker) => (
-          <View
-            key={marker.id}
-            className={classnames(
-              styles.markerCard,
-              activeMarker === marker.id && styles.active
-            )}
-            onClick={() => handleMarkerClick(marker.id)}
-          >
-            <View className={styles.markerCardHeader}>
-              <View className={classnames(styles.markerTypeBadge, marker.type)}>
-                {markerTypeLabels[marker.type]}
-              </View>
-              <Text className={styles.markerName}>{marker.name}</Text>
-              <View className={classnames(styles.markerStatus, marker.status)}>
-                {statusLabels[marker.status]}
-              </View>
-            </View>
-
-            <Text className={styles.markerDescription}>
-              {marker.description}
-            </Text>
-
-            {marker.volunteer && (
-              <View className={styles.markerInfo}>
-                <View className={styles.markerInfoItem}>
-                  <Text className={styles.markerInfoIcon}>👤</Text>
-                  <Text>负责志愿者：{marker.volunteer}</Text>
+        {filteredMarkers.map((marker) => {
+          const info = activeExchangesByMarker[marker.id];
+          const hasAgreement = !!info;
+          return (
+            <View
+              key={marker.id}
+              className={classnames(
+                styles.markerCard,
+                activeMarker === marker.id && styles.active,
+                hasAgreement && styles.cardHot
+              )}
+              onClick={() => handleMarkerClick(marker.id)}
+            >
+              <View className={styles.markerCardHeader}>
+                <View className={classnames(styles.markerTypeBadge, marker.type)}>
+                  {markerIcons[marker.type]} {markerTypeLabels[marker.type]}
+                </View>
+                <Text className={styles.markerName}>{marker.name}</Text>
+                <View className={classnames(styles.markerStatus, marker.status)}>
+                  {statusLabels[marker.status]}
                 </View>
               </View>
-            )}
-          </View>
-        ))}
+
+              <Text className={styles.markerDescription}>
+                {marker.description}
+              </Text>
+
+              {hasAgreement && (
+                <View className={styles.agreementRow}>
+                  <View className={styles.agreementInfo}>
+                    <Tag text={`🔥 ${info.count} 个活跃约定`} type="warning" size="sm" />
+                    {info.items.length > 0 && (
+                      <Text className={styles.agreementItems}>
+                        涉及：{info.items.join('、')}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )}
+
+              {marker.volunteer && (
+                <View className={styles.markerInfo}>
+                  <View className={styles.markerInfoItem}>
+                    <Text className={styles.markerInfoIcon}>👤</Text>
+                    <Text>负责志愿者：{marker.volunteer}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );

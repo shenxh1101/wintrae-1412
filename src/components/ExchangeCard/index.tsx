@@ -90,7 +90,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = ({
           <View className={styles.userMeta}>
             <Text className={styles.userName}>{otherUserName}</Text>
             <Text className={styles.timeText}>
-              {formatTime(exchange.createdAt)}
+              更新于 {formatTime(exchange.updatedAt || exchange.createdAt)}
             </Text>
           </View>
           <View className={styles.arrow}>›</View>
@@ -100,7 +100,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = ({
       {exchange.messages && exchange.messages.length > 0 && (
         <View className={styles.latestMsg}>
           <Text className={styles.msgPreview}>
-            💬 {exchange.messages[exchange.messages.length - 1].content}
+            💬 {exchange.messages[exchange.messages.length - 1].senderName}：{exchange.messages[exchange.messages.length - 1].content}
           </Text>
         </View>
       )}

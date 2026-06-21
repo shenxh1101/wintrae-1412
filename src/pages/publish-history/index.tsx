@@ -64,8 +64,7 @@ const PublishHistoryPage: React.FC = () => {
   };
 
   const handleEdit = (itemId: string) => {
-    Taro.showToast({ title: '编辑功能开发中', icon: 'none' });
-    console.log('[PublishHistory] 编辑物品:', itemId);
+    Taro.navigateTo({ url: `/pages/item-edit/index?id=${itemId}` });
   };
 
   const handleToggleOffline = (itemId: string, currentStatus: ItemStatus) => {

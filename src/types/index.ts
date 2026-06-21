@@ -87,6 +87,8 @@ export interface ExchangeOrder {
   status: ExchangeStatus;
   messages: ExchangeMessage[];
   meetLocation?: string;
+  meetMarkerId?: string;
+  meetMarkerType?: MarkerType;
   meetTime?: string;
   cancelReason?: string;
   rating?: number;
