@@ -1,0 +1,130 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, $color-bg-page 0%, rgba($color-bg-page, 0.95) 100%);
+  padding: $spacing-md 0;
+  margin: 0 (-$page-padding);
+  padding-left: $page-padding;
+}
+
+.categorySection {
+  margin-bottom: $spacing-md;
+}
+
+.categoryScroll {
+  @include scroll-x-container;
+  width: 100%;
+}
+
+.categoryInner {
+  display: inline-flex;
+  gap: $spacing-sm;
+  padding-right: $page-padding;
+}
+
+.categoryItem {
+  @include scroll-x-item(auto);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 24rpx;
+  border-radius: $radius-button;
+  background: $color-bg-card;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+  
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    border-color: $color-primary;
+    
+    .categoryText {
+      color: $color-text-white;
+      font-weight: $font-weight-semibold;
+    }
+  }
+  
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.categoryText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+}
+
+.actionSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: $page-padding;
+}
+
+.sortGroup {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.sortItem {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 0;
+  
+  &.sortActive .sortText {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+  
+  &.sortActive .sortText::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 4rpx;
+    background: $color-primary;
+    border-radius: 2rpx;
+    margin-top: 4rpx;
+  }
+}
+
+.sortText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.deliverFilter {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 20rpx;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  border: 2rpx solid $color-border;
+  transition: all $transition-fast;
+  
+  &.deliverActive {
+    background: rgba($color-info, 0.1);
+    border-color: $color-info;
+    
+    .deliverText {
+      color: $color-info;
+      font-weight: $font-weight-medium;
+    }
+  }
+  
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.deliverIcon {
+  font-size: $font-size-md;
+  margin-right: 8rpx;
+}
+
+.deliverText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}

@@ -1,0 +1,100 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #F6FFED 0%, $color-bg-page 100%);
+}
+
+.container {
+  padding: 0 $page-padding;
+  padding-bottom: 120rpx;
+}
+
+.header {
+  padding: $spacing-lg 0;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  padding: 16rpx $spacing-lg;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  
+  &:active {
+    box-shadow: 0 2rpx 12rpx rgba($color-primary, 0.1);
+  }
+}
+
+.searchIcon {
+  font-size: $font-size-lg;
+  margin-right: $spacing-sm;
+  opacity: 0.6;
+}
+
+.searchInput {
+  flex: 1;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: transparent;
+}
+
+.searchPlaceholder {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.statsBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: $spacing-md;
+  padding: 0 $spacing-sm;
+}
+
+.statsText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  
+  strong {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+    margin: 0 4rpx;
+  }
+}
+
+.viewToggle {
+  display: flex;
+  gap: 8rpx;
+}
+
+.toggleBtn {
+  padding: 8rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  
+  &.active {
+    background: $color-primary-bg;
+    color: $color-primary-dark;
+    font-weight: $font-weight-semibold;
+  }
+  
+  &:not(.active) {
+    color: $color-text-tertiary;
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+}

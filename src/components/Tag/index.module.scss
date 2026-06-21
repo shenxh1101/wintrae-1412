@@ -1,0 +1,84 @@
+@use '@/styles/variables.scss' as *;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: $radius-sm;
+  
+  &.sm {
+    padding: 4rpx 12rpx;
+    .text {
+      font-size: $font-size-xs;
+      line-height: 1.4;
+    }
+  }
+  
+  &.md {
+    padding: 8rpx 16rpx;
+    .text {
+      font-size: $font-size-sm;
+      line-height: 1.4;
+    }
+  }
+  
+  &.default {
+    background: $color-bg-tag;
+    .text { color: $color-primary-dark; }
+    &.plain {
+      background: transparent;
+      border: 1rpx solid $color-border-light;
+    }
+  }
+  
+  &.primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    .text { color: $color-text-white; }
+    &.plain {
+      background: transparent;
+      border: 1rpx solid $color-primary;
+      .text { color: $color-primary; }
+    }
+  }
+  
+  &.success {
+    background: rgba($color-success, 0.1);
+    .text { color: $color-success; }
+    &.plain {
+      background: transparent;
+      border: 1rpx solid $color-success;
+    }
+  }
+  
+  &.warning {
+    background: rgba($color-warning, 0.1);
+    .text { color: $color-warning; }
+    &.plain {
+      background: transparent;
+      border: 1rpx solid $color-warning;
+    }
+  }
+  
+  &.error {
+    background: rgba($color-error, 0.1);
+    .text { color: $color-error; }
+    &.plain {
+      background: transparent;
+      border: 1rpx solid $color-error;
+    }
+  }
+  
+  &.info {
+    background: rgba($color-info, 0.1);
+    .text { color: $color-info; }
+    &.plain {
+      background: transparent;
+      border: 1rpx solid $color-info;
+    }
+  }
+}
+
+.text {
+  font-weight: $font-weight-medium;
+}

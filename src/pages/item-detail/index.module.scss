@@ -1,0 +1,193 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #F6FFED 0%, $color-bg-page 100%);
+  padding-bottom: 180rpx;
+}
+
+.imageSwiper {
+  width: 100%;
+  height: 500rpx;
+  background: $color-bg-card;
+}
+
+.swiperImage {
+  width: 100%;
+  height: 100%;
+}
+
+.imageIndicator {
+  position: absolute;
+  bottom: $spacing-md;
+  right: $spacing-lg;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6rpx 20rpx;
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-xs;
+  z-index: 10;
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+}
+
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.itemTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.3;
+  flex: 1;
+  margin-right: $spacing-md;
+}
+
+.statusTag {
+  flex-shrink: 0;
+}
+
+.infoTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.publisherCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 2rpx 12rpx rgba($color-primary, 0.06);
+  margin-bottom: $spacing-lg;
+  display: flex;
+  align-items: center;
+}
+
+.publisherAvatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: $radius-round;
+  margin-right: $spacing-md;
+  background: $color-bg-hover;
+  flex-shrink: 0;
+}
+
+.publisherInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.publisherName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.publisherCommunity {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.detailCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 2rpx 12rpx rgba($color-primary, 0.06);
+  margin-bottom: $spacing-md;
+}
+
+.detailSection {
+  margin-bottom: $spacing-lg;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.detailLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.detailValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  line-height: 1.6;
+  
+  &.highlight {
+    color: $color-primary-dark;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  gap: $spacing-md;
+  z-index: 200;
+}
+
+.footerBtn {
+  @include button-reset;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+  
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+  
+  &.btnGhost {
+    width: 120rpx;
+    flex-shrink: 0;
+    background: $color-bg-page;
+    color: $color-text-secondary;
+    flex-direction: column;
+    gap: 2rpx;
+    
+    .btnIcon {
+      font-size: $font-size-xl;
+      line-height: 1;
+    }
+    
+    .btnText {
+      font-size: $font-size-xs;
+    }
+  }
+  
+  &.btnOutline {
+    flex: 1;
+    background: $color-bg-card;
+    border: 2rpx solid $color-primary;
+    color: $color-primary;
+  }
+  
+  &.btnPrimary {
+    flex: 1.5;
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+    box-shadow: 0 4rpx 16rpx rgba($color-primary, 0.3);
+  }
+}

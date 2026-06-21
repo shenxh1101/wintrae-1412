@@ -1,0 +1,241 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+  padding-bottom: 48rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: 32rpx $page-padding 48rpx;
+}
+
+.statsRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.statCard {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-lg;
+  padding: 24rpx;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.statNumber {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: $color-text-white;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 8rpx;
+}
+
+.tabs {
+  display: flex;
+  background-color: $color-bg-card;
+  margin: -24rpx $page-padding 0;
+  border-radius: $radius-lg;
+  padding: 8rpx;
+  box-shadow: $shadow-card;
+  position: relative;
+  z-index: 10;
+}
+
+.tabItem {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  font-size: 28rpx;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+  white-space: nowrap;
+}
+
+.tabActive {
+  background-color: $color-primary-bg;
+  color: $color-primary;
+  font-weight: 600;
+}
+
+.listContainer {
+  padding: 24rpx $page-padding 0;
+}
+
+.listCard {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24rpx;
+}
+
+.statusTag {
+  padding: 8rpx 20rpx;
+  border-radius: 32rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.statusAvailable {
+  background-color: $color-primary-bg;
+  color: $color-primary;
+}
+
+.statusReserved {
+  background-color: rgba(250, 140, 22, 0.1);
+  color: $color-warning;
+}
+
+.statusExchanged {
+  background-color: rgba(24, 144, 255, 0.1);
+  color: $color-info;
+}
+
+.statusOffline {
+  background-color: rgba(134, 144, 156, 0.1);
+  color: $color-text-tertiary;
+}
+
+.cardTime {
+  font-size: 24rpx;
+  color: $color-text-tertiary;
+}
+
+.cardBody {
+  display: flex;
+  gap: 24rpx;
+}
+
+.cardImage {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+  background-color: $color-divider;
+}
+
+.cardContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: $color-text-primary;
+  line-height: 1.4;
+  @include text-ellipsis;
+}
+
+.cardDesc {
+  font-size: 24rpx;
+  color: $color-text-secondary;
+  line-height: 1.5;
+  margin-top: 8rpx;
+  @include text-ellipsis-multi(2);
+}
+
+.tagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.tagItem {
+  padding: 6rpx 16rpx;
+  background-color: $color-bg-tag;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: $color-primary;
+  white-space: nowrap;
+}
+
+.tagOrange {
+  background-color: rgba(250, 140, 22, 0.1);
+  color: $color-warning;
+}
+
+.tagBlue {
+  background-color: rgba(24, 144, 255, 0.1);
+  color: $color-info;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid $color-divider;
+}
+
+.metaInfo {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: $color-text-tertiary;
+}
+
+.actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.actionBtn {
+  @include button-reset;
+  padding: 12rpx 24rpx;
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  white-space: nowrap;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.8;
+    transform: scale(0.96);
+  }
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.btnOutline {
+  background-color: transparent;
+  border: 1rpx solid $color-border;
+  color: $color-text-secondary;
+}
+
+.btnDanger {
+  background-color: rgba(245, 63, 63, 0.1);
+  color: $color-error;
+}

@@ -1,0 +1,284 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #F6FFED 0%, $color-bg-page 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: $spacing-md $page-padding;
+  background: $color-bg-card;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  z-index: 10;
+}
+
+.filterRow {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  padding: 12rpx 20rpx;
+  border-radius: $radius-button;
+  background: $color-bg-page;
+  border: 2rpx solid transparent;
+  display: flex;
+  align-items: center;
+  transition: all $transition-fast;
+  
+  &.active {
+    background: linear-gradient(135deg, rgba($color-primary, 0.15) 0%, rgba($color-primary-light, 0.1) 100%);
+    border-color: $color-primary;
+    
+    .filterLabel {
+      color: $color-primary-dark;
+      font-weight: $font-weight-semibold;
+    }
+  }
+  
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.filterIcon {
+  margin-right: 8rpx;
+  font-size: $font-size-md;
+}
+
+.filterLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.mapContainer {
+  position: relative;
+  flex: 1;
+  min-height: 600rpx;
+  margin: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.mapPlaceholder {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: 
+    radial-gradient(circle at 30% 40%, rgba($color-primary, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 70% 60%, rgba($color-secondary, 0.08) 0%, transparent 50%),
+    linear-gradient(135deg, #FAFFFA 0%, #F0FFF0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapGrid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba($color-primary, 0.05) 1rpx, transparent 1rpx),
+    linear-gradient(90deg, rgba($color-primary, 0.05) 1rpx, transparent 1rpx);
+  background-size: 60rpx 60rpx;
+  pointer-events: none;
+}
+
+.mapCenterLabel {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  opacity: 0.5;
+  font-weight: $font-weight-medium;
+}
+
+.markersLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.mapMarker {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all $transition-fast;
+  
+  &.active {
+    z-index: 10;
+    .markerPin {
+      transform: scale(1.15);
+      filter: drop-shadow(0 4rpx 8rpx rgba(0, 0, 0, 0.2));
+    }
+  }
+  
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.markerPin {
+  font-size: 48rpx;
+  line-height: 1;
+  transition: all $transition-fast;
+}
+
+.markerBubble {
+  position: absolute;
+  top: -56rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: $color-bg-card;
+  padding: 8rpx 16rpx;
+  border-radius: $radius-sm;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8rpx solid transparent;
+    border-right: 8rpx solid transparent;
+    border-top: 10rpx solid $color-bg-card;
+  }
+}
+
+.markerList {
+  margin: $spacing-md $page-padding $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.listTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    content: '📍';
+    margin-right: $spacing-sm;
+  }
+}
+
+.markerCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 2rpx 12rpx rgba($color-primary, 0.06);
+  transition: all $transition-base;
+  border: 2rpx solid transparent;
+  
+  &.active {
+    border-color: $color-primary;
+    background: linear-gradient(135deg, rgba($color-primary, 0.03) 0%, $color-bg-card 100%);
+  }
+  
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.markerCardHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.markerTypeBadge {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  margin-right: $spacing-sm;
+  
+  &.stall {
+    background: rgba($color-primary, 0.1);
+    color: $color-primary-dark;
+  }
+  
+  &.service {
+    background: rgba($color-info, 0.1);
+    color: $color-info;
+  }
+  
+  &.donation {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+}
+
+.markerName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  flex: 1;
+  @include text-ellipsis;
+}
+
+.markerStatus {
+  padding: 6rpx 12rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  
+  &.open {
+    background: rgba($color-success, 0.1);
+    color: $color-success;
+  }
+  
+  &.busy {
+    background: rgba($color-warning, 0.1);
+    color: $color-warning;
+  }
+  
+  &.closed {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+}
+
+.markerDescription {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: $spacing-md;
+}
+
+.markerInfo {
+  display: flex;
+  gap: $spacing-lg;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.markerInfoItem {
+  display: flex;
+  align-items: center;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.markerInfoIcon {
+  margin-right: 8rpx;
+}
