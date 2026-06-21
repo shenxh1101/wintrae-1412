@@ -12,6 +12,7 @@ import {
   exchangeTypeLabels
 } from '@/types';
 import { generateId } from '@/utils';
+import { useAppStore, currentUser } from '@/store';
 import styles from './index.module.scss';
 
 const categoryOptions: ItemCategory[] = [
@@ -26,6 +27,7 @@ const conditionOptions: ItemCondition[] = [
 const exchangeTypeOptions: ExchangeType[] = ['swap', 'gift', 'both'];
 
 const PublishPage: React.FC = () => {
+  const addItem = useAppStore((s) => s.addItem);
   const [images, setImages] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -37,19 +39,35 @@ const PublishPage: React.FC = () => {
   const [canDeliver, setCanDeliver] = useState(false);
 
   const handleChooseImage = () => {
-    if (images.length >= 6) {
+    const remaining = 6 - images.length;
+    if (remaining <= 0) {
       Taro.showToast({ title: '最多上传6张图片', icon: 'none' });
       return;
     }
-    console.log('[PublishPage] Choose image');
-    const mockImages = [
-      `https://picsum.photos/id/${Math.floor(Math.random() * 100 + 100)}/600/600`
-    ];
-    setImages([...images, ...mockImages].slice(0, 6));
+    Taro.chooseImage({
+      count: remaining,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const newImgs = res.tempFilePaths.slice(0, remaining);
+        setImages([...images, ...newImgs].slice(0, 6));
+        console.log('[PublishPage] Selected images:', newImgs.length);
+      },
+      fail: (err) => {
+        console.error('[PublishPage] Choose image failed:', err);
+      }
+    });
   };
 
   const handleDeleteImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+  };
+
+  const handlePreviewImage = (index: number) => {
+    Taro.previewImage({
+      current: images[index],
+      urls: images
+    });
   };
 
   const validateForm = (): boolean => {
@@ -86,12 +104,30 @@ const PublishPage: React.FC = () => {
 
   const handleSubmit = () => {
     if (!validateForm()) return;
-    
-    console.log('[PublishPage] Submit publish', {
+
+    const now = new Date().toLocaleString();
+    const newItem = {
       id: generateId(),
-      images, title, description, category, condition,
-      exchangeType, expectSwapFor, availableTime, canDeliver
-    });
+      title: title.trim(),
+      description: description.trim(),
+      images,
+      category: category as ItemCategory,
+      condition: condition as ItemCondition,
+      exchangeType: exchangeType as ExchangeType,
+      availableTime: availableTime.trim(),
+      canDeliver,
+      publisherId: currentUser.id,
+      publisherName: currentUser.name,
+      publisherAvatar: currentUser.avatar,
+      community: currentUser.community,
+      distance: 0,
+      status: 'available' as const,
+      createdAt: now,
+      expectSwapFor: exchangeType === 'swap' ? expectSwapFor.trim() || undefined : undefined
+    };
+
+    addItem(newItem);
+    console.log('[PublishPage] Item published:', newItem.id);
 
     Taro.showModal({
       title: '发布成功',
@@ -146,7 +182,12 @@ const PublishPage: React.FC = () => {
             <View className={styles.imageUploader}>
               {images.map((img, index) => (
                 <View key={index} className={styles.imageItem}>
-                  <Image className={styles.uploadedImage} src={img} mode="aspectFill" />
+                  <Image
+                    className={styles.uploadedImage}
+                    src={img}
+                    mode="aspectFill"
+                    onClick={() => handlePreviewImage(index)}
+                  />
                   <View className={styles.deleteBtn} onClick={() => handleDeleteImage(index)}>
                     ×
                   </View>

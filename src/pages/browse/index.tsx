@@ -5,14 +5,16 @@ import classnames from 'classnames';
 import FilterBar from '@/components/FilterBar';
 import ItemCard from '@/components/ItemCard';
 import EmptyState from '@/components/EmptyState';
-import { mockItems, getAllCategories } from '@/data/items';
+import { getAllCategories } from '@/data/items';
 import { Item } from '@/types';
+import { useAppStore } from '@/store';
 import styles from './index.module.scss';
 
 type SortKey = 'time' | 'distance';
 type ViewMode = 'list' | 'grid';
 
 const BrowsePage: React.FC = () => {
+  const items = useAppStore((s) => s.items);
   const [keyword, setKeyword] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeSort, setActiveSort] = useState<SortKey>('time');
@@ -20,7 +22,7 @@ const BrowsePage: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   useDidShow(() => {
-    console.log('[BrowsePage] Page showed');
+    console.log('[BrowsePage] Page showed, items count:', items.length);
   });
 
   const categories = getAllCategories();
@@ -30,7 +32,7 @@ const BrowsePage: React.FC = () => {
   ];
 
   const filteredItems = useMemo(() => {
-    let result: Item[] = [...mockItems];
+    let result: Item[] = [...items];
 
     if (activeCategory !== 'all') {
       result = result.filter((item) => item.category === activeCategory);
@@ -61,7 +63,7 @@ const BrowsePage: React.FC = () => {
     }
 
     return result;
-  }, [activeCategory, deliverOnly, keyword, activeSort]);
+  }, [items, activeCategory, deliverOnly, keyword, activeSort]);
 
   const handleSearch = (e: any) => {
     setKeyword(e.detail.value);
@@ -72,10 +74,6 @@ const BrowsePage: React.FC = () => {
     setTimeout(() => {
       Taro.stopPullDownRefresh();
     }, 500);
-  };
-
-  const onPullDownRefresh = () => {
-    handleRefresh();
   };
 
   return (

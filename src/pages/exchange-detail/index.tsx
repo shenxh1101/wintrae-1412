@@ -3,27 +3,28 @@ import { View, Text, Image, Input } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import classnames from 'classnames';
 import Tag from '@/components/Tag';
-import { mockExchanges } from '@/data/exchanges';
-import { mockCurrentUser } from '@/data/user';
+import { useAppStore, currentUser } from '@/store';
 import {
   ExchangeOrder,
   exchangeStatusLabels
 } from '@/types';
-import { formatDate, formatTime, getRatingStars } from '@/utils';
+import { formatDate, formatTime } from '@/utils';
 import styles from './index.module.scss';
 
 const ExchangeDetailPage: React.FC = () => {
   const router = useRouter();
   const id = router.params.id;
 
-  const exchange: ExchangeOrder | undefined =
-    mockExchanges.find((e) => e.id === id) || mockExchanges[0];
+  const exchanges = useAppStore((s) => s.exchanges);
+  const updateExchange = useAppStore((s) => s.updateExchange);
+  const updateItem = useAppStore((s) => s.updateItem);
 
-  const currentUser = mockCurrentUser;
+  const exchange: ExchangeOrder | undefined =
+    exchanges.find((e) => e.id === id);
+
   const isPublisher = exchange?.publisherId === currentUser.id;
 
   const [messageText, setMessageText] = useState('');
-  const [messages, setMessages] = useState(exchange?.messages || []);
 
   if (!exchange) {
     return (
@@ -47,42 +48,78 @@ const ExchangeDetailPage: React.FC = () => {
       senderName: currentUser.name,
       senderAvatar: currentUser.avatar,
       content: messageText.trim(),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toLocaleString()
     };
     
-    setMessages([...messages, newMsg]);
+    updateExchange(exchange.id, {
+      messages: [...exchange.messages, newMsg]
+    });
     setMessageText('');
     console.log('[ExchangeDetail] Message sent:', newMsg);
   };
 
-  const showConfirmModal = (title: string, content: string, onConfirm: () => void) => {
+  const handleReserve = () => {
     Taro.showModal({
-      title,
-      content,
-      confirmText: '确定',
-      cancelText: '取消',
+      title: '确认预留',
+      content: '确定要为对方预留此物品吗？预留后其他用户将无法申请交换。',
+      confirmText: '确定预留',
+      cancelText: '再想想',
       confirmColor: '#52C41A',
       success: (res) => {
-        if (res.confirm) onConfirm();
+        if (res.confirm) {
+          updateExchange(exchange.id, { status: 'reserved' });
+          updateItem(exchange.itemId, { status: 'reserved' });
+          console.log('[ExchangeDetail] Reserved:', exchange.id);
+          Taro.showToast({ title: '已预留', icon: 'success' });
+        }
       }
     });
   };
 
-  const handleReserve = () => {
-    showConfirmModal(
-      '确认预留',
-      '确定要为对方预留此物品吗？预留后其他用户将无法申请交换。',
-      () => {
-        Taro.showToast({ title: '已预留', icon: 'success' });
+  const handleConfirmMeet = () => {
+    const locations = ['社区活动中心', '小区东门', '社区广场', '活动中心服务台'];
+    Taro.showActionSheet({
+      itemList: [...locations, '自定义地点'],
+      success: (res) => {
+        if (res.tapIndex === locations.length) {
+          Taro.showModal({
+            title: '输入约定地点',
+            editable: true,
+            placeholderText: '请输入约定地点',
+            confirmColor: '#52C41A',
+            success: (modalRes) => {
+              if (modalRes.confirm && modalRes.content?.trim()) {
+                confirmMeetLocation(modalRes.content.trim());
+              }
+            }
+          });
+        } else {
+          confirmMeetLocation(locations[res.tapIndex]);
+        }
       }
-    );
+    });
   };
 
-  const handleConfirmMeet = () => {
-    Taro.showActionSheet({
-      itemList: ['社区活动中心', '小区东门', '约定其他地点'],
-      success: () => {
-        Taro.showToast({ title: '已约定', icon: 'success' });
+  const confirmMeetLocation = (location: string) => {
+    const now = new Date();
+    const defaultTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate() + 1).padStart(2, '0')} 14:00`;
+    Taro.showModal({
+      title: '约定时间',
+      editable: true,
+      placeholderText: `如：${defaultTime}`,
+      content: defaultTime,
+      confirmColor: '#52C41A',
+      success: (res) => {
+        if (res.confirm) {
+          const meetTime = res.content?.trim() || defaultTime;
+          updateExchange(exchange.id, {
+            status: 'confirmed',
+            meetLocation: location,
+            meetTime
+          });
+          console.log('[ExchangeDetail] Confirmed meet:', location, meetTime);
+          Taro.showToast({ title: '已约定地点时间', icon: 'success' });
+        }
       }
     });
   };
@@ -91,22 +128,47 @@ const ExchangeDetailPage: React.FC = () => {
     Taro.showModal({
       title: '完成交换',
       content: '请确认双方已完成物品交换，完成后可进行评价。',
-      editable: true,
-      placeholderText: '请输入评价（选填）',
       confirmText: '确认完成',
       confirmColor: '#52C41A',
-      success: () => {
-        Taro.showToast({ title: '交换完成', icon: 'success' });
+      success: (res) => {
+        if (res.confirm) {
+          updateExchange(exchange.id, { status: 'completed' });
+          updateItem(exchange.itemId, { status: 'exchanged' });
+          console.log('[ExchangeDetail] Completed:', exchange.id);
+          Taro.showToast({ title: '交换完成', icon: 'success' });
+        }
       }
     });
   };
 
   const handleRate = () => {
-    const ratings = ['⭐⭐⭐⭐⭐ 非常满意', '⭐⭐⭐⭐ 比较满意', '⭐⭐⭐ 一般', '⭐⭐ 不满意', '⭐ 非常不满意'];
+    const ratingOptions = [
+      { label: '⭐⭐⭐⭐⭐ 非常满意', value: 5 },
+      { label: '⭐⭐⭐⭐ 比较满意', value: 4 },
+      { label: '⭐⭐⭐ 一般', value: 3 },
+      { label: '⭐⭐ 不满意', value: 2 },
+      { label: '⭐ 非常不满意', value: 1 }
+    ];
     Taro.showActionSheet({
-      itemList: ratings,
-      success: () => {
-        Taro.showToast({ title: '评价成功', icon: 'success' });
+      itemList: ratingOptions.map((r) => r.label),
+      success: (res) => {
+        const rating = ratingOptions[res.tapIndex].value;
+        Taro.showModal({
+          title: '评价内容',
+          editable: true,
+          placeholderText: '请输入评价（选填）',
+          confirmColor: '#52C41A',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              updateExchange(exchange.id, {
+                rating,
+                ratingComment: modalRes.content?.trim() || ''
+              });
+              console.log('[ExchangeDetail] Rated:', rating, modalRes.content);
+              Taro.showToast({ title: '评价成功', icon: 'success' });
+            }
+          }
+        });
       }
     });
   };
@@ -121,14 +183,27 @@ const ExchangeDetailPage: React.FC = () => {
     Taro.showActionSheet({
       itemList: reasons,
       success: (res) => {
+        const selectedReason = reasons[res.tapIndex];
         Taro.showModal({
-          title: '取消原因',
+          title: '补充说明',
           editable: true,
-          placeholderText: `请补充说明（${reasons[res.tapIndex]}）`,
+          placeholderText: `取消原因：${selectedReason}\n可补充说明（选填）`,
           confirmText: '提交取消',
           confirmColor: '#F53F3F',
-          success: () => {
-            Taro.showToast({ title: '已取消', icon: 'none' });
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              const extraDetail = modalRes.content?.trim();
+              const cancelReason = extraDetail
+                ? `${selectedReason} - ${extraDetail}`
+                : selectedReason;
+              updateExchange(exchange.id, {
+                status: 'cancelled',
+                cancelReason
+              });
+              updateItem(exchange.itemId, { status: 'available' });
+              console.log('[ExchangeDetail] Cancelled:', cancelReason);
+              Taro.showToast({ title: '已取消', icon: 'none' });
+            }
           }
         });
       }
@@ -282,7 +357,7 @@ const ExchangeDetailPage: React.FC = () => {
         </View>
       )}
 
-      {(exchange.status === 'reserved' || exchange.status === 'confirmed') && exchange.meetLocation && (
+      {(exchange.status === 'reserved' || exchange.status === 'confirmed' || exchange.status === 'completed') && exchange.meetLocation && (
         <View className={styles.meetCard}>
           <Text className={styles.sectionTitle}>交换约定</Text>
           <View className={styles.meetInfoRow}>
@@ -310,7 +385,7 @@ const ExchangeDetailPage: React.FC = () => {
           <View className={styles.ratingStars}>
             {Array.from({ length: 5 }).map((_, i) => (
               <Text key={i} className={styles.starIcon}>
-                {i < Math.floor(exchange.rating!) ? '⭐' : '☆'}
+                {i < exchange.rating! ? '⭐' : '☆'}
               </Text>
             ))}
           </View>
@@ -323,7 +398,7 @@ const ExchangeDetailPage: React.FC = () => {
       <View className={styles.messagesCard}>
         <Text className={styles.sectionTitle}>双方留言</Text>
         <View className={styles.messagesList}>
-          {messages.map((msg) => {
+          {exchange.messages.map((msg) => {
             const isMe = msg.senderId === currentUser.id;
             return (
               <View

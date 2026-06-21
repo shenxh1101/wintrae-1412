@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import { mockItems } from '@/data/items';
-import { mockCurrentUser } from '@/data/user';
+import { useAppStore, currentUserId } from '@/store';
 import {
   ItemStatus,
   categoryLabels,
@@ -16,10 +15,13 @@ import classnames from 'classnames';
 
 const PublishHistoryPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('all');
+  const items = useAppStore((s) => s.items);
+  const updateItem = useAppStore((s) => s.updateItem);
+  const removeItem = useAppStore((s) => s.removeItem);
 
   const myItems = useMemo(() => {
-    return mockItems.filter((item) => item.publisherId === mockCurrentUser.id);
-  }, []);
+    return items.filter((item) => item.publisherId === currentUserId);
+  }, [items]);
 
   const tabs = [
     { key: 'all', label: '全部' },
@@ -74,6 +76,7 @@ const PublishHistoryPage: React.FC = () => {
       confirmColor: '#52C41A',
       success: (res) => {
         if (res.confirm) {
+          updateItem(itemId, { status: isOffline ? 'available' : 'offline' });
           console.log('[PublishHistory] 物品状态变更:', itemId, isOffline ? '上架' : '下架');
           Taro.showToast({
             title: isOffline ? '已重新上架' : '已下架',
@@ -91,6 +94,7 @@ const PublishHistoryPage: React.FC = () => {
       confirmColor: '#F53F3F',
       success: (res) => {
         if (res.confirm) {
+          removeItem(itemId);
           console.log('[PublishHistory] 删除物品:', itemId);
           Taro.showToast({ title: '已删除', icon: 'success' });
         }

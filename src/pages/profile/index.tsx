@@ -2,20 +2,19 @@ import React from 'react';
 import { View, Text, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import {
-  mockCurrentUser,
   mockCreditReminders,
   mockBlacklist,
   mockNotices,
   mockQueueNumbers
 } from '@/data/user';
-import { mockItems } from '@/data/items';
+import { useAppStore, currentUserId, currentUser } from '@/store';
 import styles from './index.module.scss';
 
 const ProfilePage: React.FC = () => {
-  const user = mockCurrentUser;
-  const myPublishedCount = mockItems.filter(
-    (item) => item.publisherId === user.id
-  ).length + 3;
+  const items = useAppStore((s) => s.items);
+  const myPublishedCount = items.filter(
+    (item) => item.publisherId === currentUserId
+  ).length;
 
   const quickActions = [
     {
@@ -150,22 +149,22 @@ const ProfilePage: React.FC = () => {
     <View className={styles.page}>
       <View className={styles.header}>
         <View className={styles.userInfo}>
-          <Image className={styles.avatar} src={user.avatar} mode="aspectFill" />
+          <Image className={styles.avatar} src={currentUser.avatar} mode="aspectFill" />
           <View className={styles.userMeta}>
             <Text className={styles.userName}>
-              {user.name}
-              {user.isVolunteer && (
+              {currentUser.name}
+              {currentUser.isVolunteer && (
                 <Text className={styles.volunteerBadge}>🎖️ 志愿者</Text>
               )}
             </Text>
-            <Text className={styles.userCommunity}>🏘️ {user.community}</Text>
-            <Text className={styles.userPhone}>📱 {user.phone}</Text>
+            <Text className={styles.userCommunity}>🏘️ {currentUser.community}</Text>
+            <Text className={styles.userPhone}>📱 {currentUser.phone}</Text>
           </View>
         </View>
 
         <View className={styles.creditCard}>
           <View className={styles.creditScoreWrap}>
-            <Text className={styles.creditScore}>{user.creditScore}</Text>
+            <Text className={styles.creditScore}>{currentUser.creditScore}</Text>
             <Text className={styles.creditLabel}>信用分</Text>
           </View>
           <View className={styles.creditActions}>

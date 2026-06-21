@@ -3,7 +3,7 @@ import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import classnames from 'classnames';
 import Tag from '@/components/Tag';
-import { mockItems } from '@/data/items';
+import { useAppStore, currentUser } from '@/store';
 import {
   categoryLabels,
   conditionLabels,
@@ -11,15 +11,18 @@ import {
   itemStatusLabels,
   Item
 } from '@/types';
-import { formatDistance, formatTime } from '@/utils';
+import { formatDistance, formatTime, generateId } from '@/utils';
 import styles from './index.module.scss';
 
 const ItemDetailPage: React.FC = () => {
   const router = useRouter();
   const id = router.params.id;
 
+  const items = useAppStore((s) => s.items);
+  const addExchange = useAppStore((s) => s.addExchange);
+
   const item: Item | undefined =
-    mockItems.find((i) => i.id === id) || mockItems[0];
+    items.find((i) => i.id === id);
 
   const [currentImage, setCurrentImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -50,6 +53,33 @@ const ItemDetailPage: React.FC = () => {
       confirmColor: '#52C41A',
       success: (res) => {
         if (res.confirm) {
+          const now = new Date().toLocaleString();
+          const newOrder = {
+            id: generateId(),
+            itemId: item.id,
+            itemTitle: item.title,
+            itemImage: item.images[0],
+            requesterId: currentUser.id,
+            requesterName: currentUser.name,
+            requesterAvatar: currentUser.avatar,
+            publisherId: item.publisherId,
+            publisherName: item.publisherName,
+            publisherAvatar: item.publisherAvatar,
+            status: 'pending' as const,
+            messages: [{
+              id: generateId(),
+              exchangeId: '',
+              senderId: currentUser.id,
+              senderName: currentUser.name,
+              senderAvatar: currentUser.avatar,
+              content: `您好，我想交换您的"${item.title}"，可以吗？`,
+              createdAt: now
+            }],
+            createdAt: now,
+            updatedAt: now
+          };
+          newOrder.messages[0].exchangeId = newOrder.id;
+          addExchange(newOrder);
           Taro.showToast({ title: '申请已发送', icon: 'success' });
           setTimeout(() => {
             Taro.switchTab({ url: '/pages/exchange/index' });

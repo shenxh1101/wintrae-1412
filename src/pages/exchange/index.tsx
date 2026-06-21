@@ -4,8 +4,7 @@ import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import ExchangeCard from '@/components/ExchangeCard';
 import EmptyState from '@/components/EmptyState';
-import { mockExchanges } from '@/data/exchanges';
-import { mockCurrentUser } from '@/data/user';
+import { useAppStore, currentUserId } from '@/store';
 import { ExchangeStatus, exchangeStatusLabels } from '@/types';
 import styles from './index.module.scss';
 
@@ -15,7 +14,7 @@ const ExchangePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [activeRole, setActiveRole] = useState<'all' | 'publisher' | 'requester'>('all');
 
-  const currentUserId = mockCurrentUser.id;
+  const exchanges = useAppStore((s) => s.exchanges);
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'all', label: '全部' },
@@ -27,17 +26,17 @@ const ExchangePage: React.FC = () => {
 
   const stats = useMemo(() => {
     const base = { pending: 0, ongoing: 0, completed: 0, cancelled: 0 };
-    return mockExchanges.reduce((acc, ex) => {
+    return exchanges.reduce((acc, ex) => {
       if (ex.status === 'pending') acc.pending++;
       else if (ex.status === 'reserved' || ex.status === 'confirmed') acc.ongoing++;
       else if (ex.status === 'completed') acc.completed++;
       else if (ex.status === 'cancelled') acc.cancelled++;
       return acc;
     }, base);
-  }, []);
+  }, [exchanges]);
 
   const filteredExchanges = useMemo(() => {
-    let result = [...mockExchanges];
+    let result = [...exchanges];
 
     if (activeRole === 'publisher') {
       result = result.filter((ex) => ex.publisherId === currentUserId);
@@ -67,7 +66,7 @@ const ExchangePage: React.FC = () => {
     );
 
     return result;
-  }, [activeTab, activeRole, currentUserId]);
+  }, [exchanges, activeTab, activeRole]);
 
   const onPullDownRefresh = () => {
     setTimeout(() => {
